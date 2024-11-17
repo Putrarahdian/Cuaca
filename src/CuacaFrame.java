@@ -1,20 +1,14 @@
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import javax.swing.table.DefaultTableModel;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
+import org.json.JSONObject;
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
@@ -31,45 +25,151 @@ public class CuacaFrame extends javax.swing.JFrame {
      */
     public CuacaFrame() {
         initComponents();
-        
-    }
-
-
-
-public class WeatherService {
-    private static final String API_KEY = "e665b751b1bc7fac55e604e3fb6cd436";
-    private static final String BASE_URL = "http://api.openweathermap.org/data/2.5/weather";
-
-    public String getWeather(String location) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        String url = BASE_URL + "?q=" + location + "&appid=" + API_KEY;
-
-        Request request = new Request.Builder().url(url).build();
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                return response.body().string();
-            } else {
-                throw new Exception("Error: " + response.code());
+         jButton1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String city = jTextField1.getText();
+                if (!city.isEmpty()) {
+                    getWeather(city);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Masukkan nama kota!");
+                }
+            }
+        });
+        jComboBox1.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String selectedCity = (String) jComboBox1.getSelectedItem();
+            if (selectedCity != null && !selectedCity.isEmpty()) {
+                getWeather(selectedCity); // Memanggil fungsi pengecekan cuaca
             }
         }
+    });
     }
-}
-private void tampilkanGambarCuaca(String kondisi) {
-    String path = "/resources/icons/" + kondisi + ".png"; // Contoh: "clear.png".
+    private String translateWeatherCondition(String weather) {
+        switch (weather.toLowerCase()) {
+            case "clear":
+                return "Matahari";
+            case "clouds":
+                return "Berawan";
+            case "rain":
+                return "Hujan";
+            case "snow":
+                return "Salju";
+            case "thunderstorm":
+                return "Badai";
+            default:
+                return "Kondisi tidak diketahui";
+        }
+    }
+private void getWeather(String city) {
     try {
-        ImageIcon icon = new ImageIcon(getClass().getResource(path));
-        JLabel label = new JLabel(icon);
-        jPanel3.removeAll();
-        jPanel3.add(label);
-        jPanel3.revalidate();
-        jPanel3.repaint();
+        String apiKey = "e665b751b1bc7fac55e604e3fb6cd436"; // Ganti dengan API Key Anda
+        String urlString = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + apiKey;
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String inputLine;
+        StringBuilder content = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+        in.close();
+        conn.disconnect();
+
+        JSONObject json = new JSONObject(content.toString());
+        String weather = json.getJSONArray("weather").getJSONObject(0).getString("main");
+
+        // Terjemahkan kondisi cuaca ke bahasa Indonesia
+        String translatedWeather = translateWeatherCondition(weather);
+        
+        // Tampilkan kondisi cuaca yang diterjemahkan
+        jLabel2.setText("Kondisi Cuaca: " + translatedWeather);
+
+        // Tampilkan gambar cuaca
+        jLabel3.setIcon(getWeatherImage(weather));
+        
+        // Tambahkan data cuaca ke JTable
+        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+        model.addRow(new Object[]{city, translatedWeather});
+
     } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Gambar cuaca tidak ditemukan.");
+        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
     }
-    tampilkanGambarCuaca("clear"); // Ganti dengan kondisi cuaca dari API.
-
 }
+ private ImageIcon getWeatherImage(String weather) {
+        String imagePath;
+            switch (weather.toLowerCase()) {
+                case "clear":
+                    imagePath = "/images/Matahari.png";
+                    break;
+                case "clouds":
+                    imagePath = "/images/Berawan.png";
+                    break;
+                case "rain":
+                    imagePath = "/images/Hujan.png";
+                    break;
+                case "snow":
+                    imagePath = "/images/Salju.png";
+                    break;
+                case "thunderstorm":
+                    imagePath = "/images/Badai.png";
+                    break;
+                default:
+                    imagePath = "/images/Matahari.png"; // Gambar default jika kondisi tidak dikenali
+                    break;
+            }
+            return new ImageIcon(getClass().getResource(imagePath));
+    }
+    private boolean isCityInComboBox(String city) {
+        for (int i = 0; i < jComboBox1.getItemCount(); i++) {
+            if (jComboBox1.getItemAt(i).equalsIgnoreCase(city)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private void saveTableDataToCSV() {
+        try {
+            FileWriter csvWriter = new FileWriter("dataCuaca.csv");
 
+            // Header CSV
+            csvWriter.append("Kota, Kondisi Cuaca\n");
+
+            // Data dari JTable
+            for (int i = 0; i < jTable1.getRowCount(); i++) {
+                csvWriter.append(jTable1.getValueAt(i, 0).toString());
+                csvWriter.append(",");
+                csvWriter.append(jTable1.getValueAt(i, 1).toString());
+                csvWriter.append("\n");
+            }
+            csvWriter.flush();
+            csvWriter.close();
+            JOptionPane.showMessageDialog(this, "Data berhasil disimpan ke CSV");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+     private void loadTableDataFromCSV() {
+        try {
+            BufferedReader csvReader = new BufferedReader(new FileReader("dataCuaca.csv"));
+            String row;
+            DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+            model.setRowCount(0); // Hapus data lama di JTable
+
+            csvReader.readLine(); // Lewati header
+            while ((row = csvReader.readLine()) != null) {
+                String[] data = row.split(",");
+                model.addRow(data);
+            }
+            csvReader.close();
+            JOptionPane.showMessageDialog(this, "Data berhasil dimuat dari CSV");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -89,10 +189,15 @@ private void tampilkanGambarCuaca(String kondisi) {
         jPanel3 = new javax.swing.JPanel();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(400, 400));
 
+        jPanel1.setMinimumSize(new java.awt.Dimension(600, 400));
         jPanel1.setPreferredSize(new java.awt.Dimension(300, 300));
         jPanel1.setLayout(new java.awt.GridBagLayout());
 
@@ -108,7 +213,7 @@ private void tampilkanGambarCuaca(String kondisi) {
         gridBagConstraints.insets = new java.awt.Insets(15, 54, 15, 54);
         jPanel1.add(jTextField1, gridBagConstraints);
 
-        jButton1.setText("Cari");
+        jButton1.setText("Cek Cuaca");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
@@ -149,11 +254,11 @@ private void tampilkanGambarCuaca(String kondisi) {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -183,40 +288,63 @@ private void tampilkanGambarCuaca(String kondisi) {
         gridBagConstraints.gridy = 3;
         jPanel1.add(jButton4, gridBagConstraints);
 
+        jLabel2.setText("Cuaca");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new java.awt.Insets(20, 20, 20, 20);
+        jPanel1.add(jLabel2, gridBagConstraints);
+
+        jLabel3.setText("Icons");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        jPanel1.add(jLabel3, gridBagConstraints);
+
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        jTable1.setPreferredSize(new java.awt.Dimension(20, 20));
+        jScrollPane1.setViewportView(jTable1);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        jPanel1.add(jScrollPane1, gridBagConstraints);
+
         getContentPane().add(jPanel1, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-    String lokasi = jTextField1.getText();
-    WeatherService service = new WeatherService();
-    try {
-        String response = service.getWeather(lokasi);
-        System.out.println("Data Cuaca: " + response); // Ganti dengan update GUI
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Gagal mengambil data cuaca: " + e.getMessage());
-    }
+     String city = jTextField1.getText();
+        if (!city.isEmpty()) {
+            getWeather(city); // Memanggil fungsi pengecekan cuaca
+        } else {
+            JOptionPane.showMessageDialog(null, "Masukkan nama kota!");
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-     String lokasi = jTextField1.getText();
-    String dataCuaca = "Contoh data cuaca"; // Ganti dengan data dari API.
-    String filePath = "cuaca.csv"; // Nama file tujuan.
-
-    try (FileWriter writer = new FileWriter(filePath, true)) {
-        writer.append(lokasi).append(",").append(dataCuaca).append("\n");
-        JOptionPane.showMessageDialog(this, "Data berhasil disimpan ke " + filePath);
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "Gagal menyimpan data: " + e.getMessage());
-    }    // TODO add your handling code here:
+    saveTableDataToCSV(); // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-    String lokasi = jTextField1.getText();
-    if (!lokasi.isEmpty() && !isFavorit(lokasi)) {
-        jComboBox1.addItem(lokasi);
-    }
+    String city = jTextField1.getText();
+            if (!city.isEmpty() && !isCityInComboBox(city)) {
+                jComboBox1.addItem(city);
+            }
 }
 
 private boolean isFavorit(String lokasi) {
@@ -229,23 +357,12 @@ private boolean isFavorit(String lokasi) {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
-    if (evt.getStateChange() == ItemEvent.SELECTED) {
-        jTextField1.setText(jComboBox1.getSelectedItem().toString());
-    }        // TODO add your handling code here:
+    jTextField1.setText("");
+    jLabel2.setIcon(null);        // TODO add your handling code here:
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        String filePath = "cuaca.csv";
-    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line); // Ganti dengan logika untuk menampilkan di JTable.
-        }
-        JOptionPane.showMessageDialog(this, "Data berhasil dimuat.");
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "Gagal memuat data: " + e.getMessage());
-    }
-        // TODO add your handling code here:
+    loadTableDataFromCSV();// TODO add your handling code here:
     }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
@@ -290,8 +407,12 @@ private boolean isFavorit(String lokasi) {
     private javax.swing.JButton jButton4;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTable jTable1;
     private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }
