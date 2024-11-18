@@ -69,7 +69,6 @@ private void getWeather(String city) {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         String inputLine;
         StringBuilder content = new StringBuilder();
@@ -83,11 +82,9 @@ private void getWeather(String city) {
         String weather = json.getJSONArray("weather").getJSONObject(0).getString("main");
 
         // Terjemahkan kondisi cuaca ke bahasa Indonesia
-        String translatedWeather = translateWeatherCondition(weather);
-        
+        String translatedWeather = translateWeatherCondition(weather);      
         // Tampilkan kondisi cuaca yang diterjemahkan
         jLabel2.setText("Kondisi Cuaca: " + translatedWeather);
-
         // Tampilkan gambar cuaca
         jLabel3.setIcon(getWeatherImage(weather));
         
@@ -186,7 +183,6 @@ private void getWeather(String city) {
         jButton1 = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox<>();
         jButton2 = new javax.swing.JButton();
-        jPanel3 = new javax.swing.JPanel();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
@@ -207,10 +203,10 @@ private void getWeather(String city) {
         gridBagConstraints.insets = new java.awt.Insets(17, 23, 17, 23);
         jPanel1.add(jLabel1, gridBagConstraints);
 
-        jTextField1.setColumns(10);
+        jTextField1.setPreferredSize(new java.awt.Dimension(500, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(15, 54, 15, 54);
+        gridBagConstraints.insets = new java.awt.Insets(15, 51, 15, 51);
         jPanel1.add(jTextField1, gridBagConstraints);
 
         jButton1.setText("Cek Cuaca");
@@ -226,7 +222,6 @@ private void getWeather(String city) {
         gridBagConstraints.insets = new java.awt.Insets(17, 23, 17, 23);
         jPanel1.add(jButton1, gridBagConstraints);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         jComboBox1.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 jComboBox1ItemStateChanged(evt);
@@ -249,22 +244,6 @@ private void getWeather(String city) {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         jPanel1.add(jButton2, gridBagConstraints);
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        jPanel1.add(jPanel3, gridBagConstraints);
 
         jButton3.setText("Favorite");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
@@ -301,18 +280,16 @@ private void getWeather(String city) {
         gridBagConstraints.gridy = 2;
         jPanel1.add(jLabel3, gridBagConstraints);
 
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(200, 200));
+
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+
             },
             new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+                "Kota", "Cuaca"
             }
         ));
-        jTable1.setPreferredSize(new java.awt.Dimension(20, 20));
         jScrollPane1.setViewportView(jTable1);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -410,7 +387,6 @@ private boolean isFavorit(String lokasi) {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTextField jTextField1;
